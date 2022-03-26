@@ -2,6 +2,7 @@ from retry import retry
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd 
+import datetine
 
 def url_generater():
     print("URL generater start")
@@ -80,6 +81,10 @@ for page in range(1, max_page+1):
 # convert to dataframe
 df = pd.DataFrame(all_data)
 
+#date generate for file output
+fname = str(datetime.datetime.today())
+fname = fname[0:16]
+
 # output to csv
-fname = 'web_out.csv'
+fname = 'web_out.csv' + fname
 df.to_csv(fname)
