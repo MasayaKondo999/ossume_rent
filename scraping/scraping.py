@@ -2,7 +2,7 @@ from retry import retry
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd 
-import datetine
+import datetime
 
 def url_generater():
     print("URL generater start")
@@ -27,7 +27,9 @@ def get_html(url):
     return soup
 
 all_data = []
-max_page = 2
+
+# テスト用にページ指定してる
+max_page = 1
 
 for page in range(1, max_page+1):
     # define url 
@@ -65,15 +67,16 @@ for page in range(1, max_page+1):
 
                 data["階数"] = tbody.findAll("td")[2].getText().strip()
 
+                data["間取り"] = tbody.findAll("td")[5].findAll("li")[0].getText().strip()
+                data["面積"] = tbody.findAll("td")[5].findAll("li")[1].getText().strip()
+
+
                 data["家賃"] = tbody.findAll("td")[3].findAll("li")[0].getText().strip()
                 data["管理費"] = tbody.findAll("td")[3].findAll("li")[1].getText().strip()
 
                 data["敷金"] = tbody.findAll("td")[4].findAll("li")[0].getText().strip()
                 data["礼金"] = tbody.findAll("td")[4].findAll("li")[1].getText().strip()
 
-                data["間取り"] = tbody.findAll("td")[5].findAll("li")[0].getText().strip()
-                data["面積"] = tbody.findAll("td")[5].findAll("li")[1].getText().strip()
-                
                 data["URL"] = "https://suumo.jp" + tbody.findAll("td")[8].find("a").get("href")
                 
                 all_data.append(data)    
@@ -81,10 +84,9 @@ for page in range(1, max_page+1):
 # convert to dataframe
 df = pd.DataFrame(all_data)
 
-#date generate for file output
-fname = str(datetime.datetime.today())
-fname = fname[0:16]
+#date generate for output filename
+now = datetime.datetime.now()
+time = now.strftime('%Y%m%d_%H-%M-%S')
 
 # output to csv
-fname = 'web_out.csv' + fname
-df.to_csv(fname)
+df.to_csv('suumoscrape_{}.csv'.format(time),index=False)
