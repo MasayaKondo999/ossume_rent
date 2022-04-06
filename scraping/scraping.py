@@ -29,7 +29,7 @@ def get_html(url):
 all_data = []
 
 # テスト用にページ指定してる
-max_page = 1
+max_page = 2
 
 for page in range(1, max_page+1):
     # define url 
@@ -51,27 +51,71 @@ for page in range(1, max_page+1):
             # define variable 
             base_data = {}
 
-            # collect base information    
-            base_data["名称"] = item.find("div", {"class": "cassetteitem_content-title"}).getText().strip()
-            base_data["カテゴリー"] = item.find("div", {"class": "cassetteitem_content-label"}).getText().strip()
-            base_data["アドレス"] = item.find("li", {"class": "cassetteitem_detail-col1"}).getText().strip()
-            base_data["アクセス"] = station.getText().strip()
-            base_data["築年数"] = item.find("li", {"class": "cassetteitem_detail-col3"}).findAll("div")[0].getText().strip()
-            base_data["構造"] = item.find("li", {"class": "cassetteitem_detail-col3"}).findAll("div")[1].getText().strip()
+            # collect base information
+            # 物件名称、何も触らない
+            base_data["名称"] =  item.find("div", {"class": "cassetteitem_content-title"}).getText().strip()
+
+            # 物件カテゴリー、数値データに整形している
+            category = item.find("div", {"class": "cassetteitem_content-label"}).getText().strip()
+
+            category_list = {
+                "賃貸マンション":0 ,
+                 "賃貸アパート":1 ,
+                 "賃貸一戸建て":2 ,
+                 "賃貸テラス・タウンハウス":3 ,
+                 }
             
-            # process for each room
+            base_data["カテゴリー"] = category_list[category]
+
+            # アドレスから区を抽出
+            adress = item.find("li", {"class": "cassetteitem_detail-col1"}).getText().strip()
+            adress = adress[3:]
+            base_data["アドレス"] = adress
+
+            # アクセスから、沿線、駅、徒歩時間を抽出
+            base_data["アクセス"] = station.getText().strip()
+
+            # 数字だけ抽出、新築はゼロで
+            age = item.find("li", {"class": "cassetteitem_detail-col3"}).findAll("div")[0].getText().strip()
+
+            if (age == "新築") :
+                age = 0
+            else :
+                age = age[1:-1]
+            
+            base_data["築年数"] = int(age)
+
+            # 地下、地上階層　数字だけ抽出
+            structure_lv = item.find("li", {"class": "cassetteitem_detail-col3"}).findAll("div")[1].getText().strip()
+            structure_undergrond_lv = 0
+
+            if structure_lv[0:2] == "地下" :
+                structure_undergrond_lv = (structure_lv[2])
+                structure_lv = structure_lv[5:]
+
+            base_data["地上構造"] = int(structure_lv[:-2])
+            base_data["地下構造"] = int(structure_undergrond_lv)
+            
             tbodys = item.find("table", {"class": "cassetteitem_other"}).findAll("tbody")
             
+            # 同じ建物、異なる物件でのループ
             for tbody in tbodys:
                 data = base_data.copy()
 
-                data["階数"] = tbody.findAll("td")[2].getText().strip()
+                # 該当物件階数、数字にする
+                property_lv = tbody.findAll("td")[2].getText().strip()
+                property_lv = property_lv[:-1]
+                data["物件階数"] = int(property_lv)
 
+                # 間取り
                 data["間取り"] = tbody.findAll("td")[5].findAll("li")[0].getText().strip()
+                
+                # 平米
                 data["面積"] = tbody.findAll("td")[5].findAll("li")[1].getText().strip()
 
-
+                # 目的変数
                 data["家賃"] = tbody.findAll("td")[3].findAll("li")[0].getText().strip()
+                
                 data["管理費"] = tbody.findAll("td")[3].findAll("li")[1].getText().strip()
 
                 data["敷金"] = tbody.findAll("td")[4].findAll("li")[0].getText().strip()
